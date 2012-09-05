@@ -6,7 +6,6 @@
 
 import os
 import re
-import sets 
 import shutil
 
 
@@ -22,8 +21,18 @@ def parsing_results():
       source = name[-1] == "source"
       (group, name) = (".".join(name[:-2]), name[-2]) if source else (".".join(name[:-1]), name[-1])
 
-      return (group, name, version, source)
-  return [(f, jarname_parsing(f)) for f in jars()]
+      snapshot = version.upper().endswith(".SNAPSHOT")
+      if snapshot:
+        version = version[:-len(".snapshot")]
+
+      return {
+        "group": group,
+        "name": name,
+        "version": version,
+        "snapshot": snapshot,
+        "source": source
+      }
+  return [("lib/" + f, jarname_parsing(f)) for f in jars()]
 
 
 def check_results(parsing_results):
@@ -31,20 +40,30 @@ def check_results(parsing_results):
   if unparsable_files:
     raise Exception("Unparsable file names detected: " + unparsable_files)
 
-
 def maven_dependencies(parsing_results):
-  def maven_dependency(group, name, version):
+  def artifact(parsing):
+    return {
+      "groupId": parsing["group"], 
+      "artifactId": parsing["name"],
+      "version": parsing["version"] + ("-SNAPSHOT" if parsing["snapshot"] else "")
+    }
+  def maven_dependency(artifact):
     return """
 <dependency>
-  <groupId>%s</groupId>
-  <artifactId>%s</artifactId>
-  <version>%s</version>
+  <groupId>%(groupId)s</groupId>
+  <artifactId>%(artifactId)s</artifactId>
+  <version>%(version)s</version>
 </dependency>
-""" % (group, name, version)
+""" % artifact
+  def unique_artifacts():
+    artifacts = []
+    for (_, parsing) in parsing_results:
+      a = artifact(parsing)
+      if a not in artifacts:
+        artifacts.append(a)
+    return artifacts
 
-  ids = [(group, name, version) for (file, (group, name, version, source)) in parsing_results]
-  ids = sets.Set(ids)
-  return "\n".join([maven_dependency(g, n, v).strip() for (g, n, v) in ids])
+  return "\n".join([maven_dependency(a).strip() for a in unique_artifacts()])
 
 
 def move_file(src, dst):
@@ -59,17 +78,18 @@ def move_file(src, dst):
 
 
 def assort_files(parsing_results):
-  def repo_path(group, name, version, source):
+  def repo_path(p):
+    version = p["version"] + ("-SNAPSHOT" if p["snapshot"] else "")
     return "repo/" \
-         + "/".join(group.split(".")) \
-         + "/" + name + "/" + version + "/" + name + "-" + version \
-         + ("-sources" if source else "") \
+         + "/".join(p["group"].split(".")) \
+         + "/" + p["name"] + "/" + version + "/" + p["name"] + "-" + version \
+         + ("-sources" if p["source"] else "") \
          + ".jar"
 
-  for (f, (g, n, v, s)) in parsing_results:
-    move_file( "lib/" + f, repo_path(g, n, v, s) )
+  for (f, p) in parsing_results:
+    move_file( f, repo_path(p) )
   
-  
+
 parsing_results = parsing_results()
 check_results(parsing_results)
 assort_files(parsing_results)
