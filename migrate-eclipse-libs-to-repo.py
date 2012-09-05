@@ -78,16 +78,21 @@ def move_file(src, dst):
 
 
 def assort_files(parsing_results):
-  def repo_path(p):
-    version = p["version"] + ("-SNAPSHOT" if p["snapshot"] else "")
-    return "repo/" \
-         + "/".join(p["group"].split(".")) \
-         + "/" + p["name"] + "/" + version + "/" + p["name"] + "-" + version \
-         + ("-sources" if p["source"] else "") \
-         + ".jar"
 
-  for (f, p) in parsing_results:
-    move_file( f, repo_path(p) )
+  def cmd((f, p)):
+    return "install:install-file" \
+         + " -Dfile=" + f \
+         + " -DgroupId=" + p["group"] \
+         + " -DartifactId=" + p["name"] \
+         + " -Dversion=" + p["version"] + ("-SNAPSHOT" if p["snapshot"] else "") \
+         + " -Dpackaging=jar" \
+         + " -DlocalRepositoryPath=repo" \
+         + " -DcreateChecksum=true" \
+         + (" -Dclassifier=sources" if p["source"] else "")
+
+  for r in parsing_results:
+    os.system("mvn " + cmd(r))
+
   
 
 parsing_results = parsing_results()
