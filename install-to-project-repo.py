@@ -38,7 +38,8 @@ def parsing_results():
 def check_results(parsing_results):
   unparsable_files = [r[0] for r in parsing_results if r[1] == None]
   if unparsable_files:
-    raise Exception("Unparsable file names detected: " + unparsable_files)
+    raise Exception("Unparsable file names detected: \r\n" \
+                  + "\r\n".join(unparsable_files))
 
 def maven_dependencies(parsing_results):
   def artifact(parsing):
