@@ -1,19 +1,28 @@
 #About
-A Python script for easily installing libraries to an in-project Maven repository. It creates a local to project repository in it's root folder with all proper stuff of Maven repository: poms, checksums, metadata. It also outputs the appropriate dependencies xml to be inserted in your `pom` file.
+A Python script for easily installing libraries to an in-project Maven repository. It creates a repository in the root folder of the project complete with poms, checksums and metadata. It also outputs the appropriate dependencies xml to be inserted in your `pom` file.
 
 #How it works
-It looks for jars having name of Eclipse naming standard, which has the following format: 
+* It looks for jars having name of Eclipse standard, which has the following format: 
 
-    groupId.artifactId[.source]_version[.SNAPSHOT].jar
+        groupId.artifactId[.source]_version[.SNAPSHOT].jar
 
-It ignores any files which are not jars.
+* It ignores any files which are not jars.
 
-It exits with an error if the `lib` directory contains any jars of unsupported naming format, not installing anything.
+* It exits with an error if the `lib` directory contains any jars of unsupported naming format, not performing any side effects.
 
-After successful installation of all jars it prints out all according dependencies for your `pom`.
+* After successful installation of all jars it prints out all according dependencies for your `pom`.
 
 #Using
-Just run it from the folder containing your lib folder.
+Just run it from the folder containing your lib folder. 
+
+After the script is complete copy-paste the generated dependencies xml to your `pom` under `dependencies` tag and add the following under the `repositories` tag:
+
+    <repository>
+      <id>project</id>
+      <url>file://${project.basedir}/repo</url>
+    </repository>
+
+For more details and information about what to be aware of please read [this StackOverflow answer](http://stackoverflow.com/a/7623805/485115).
 
 #Example
 If the structure of the `lib` folder is as follows:
