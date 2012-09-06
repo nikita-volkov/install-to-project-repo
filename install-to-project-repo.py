@@ -1,7 +1,11 @@
 #!/usr/bin/python
 
-# This is a utility script that moves all the eclipse libs in the lib/ folder to
-# local repository and prints out Maven dependencies
+# A script for installing jars to an in-project Maven repository. 
+# 
+# MIT License
+# (c) 2012, Nikita Volkov. All rights reserved.
+# http://github.com/nikita-volkov/install-to-local-repo
+# 
 
 
 import os
