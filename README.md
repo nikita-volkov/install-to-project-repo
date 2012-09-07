@@ -1,18 +1,21 @@
-#About
+#Install to Project Repo
 A Python script for easily installing libraries to an in-project Maven repository. It creates a repository in the root folder of the project complete with poms, checksums and metadata. It also outputs the appropriate dependencies xml to be inserted in your `pom` file.
 
-#How it works
-* It looks for jars having name of Eclipse standard, which has the following format: 
+
+##What it does
+* When run in standard mode it looks for jars in the `lib` folder having name of Eclipse standard and ignores all files that don't match it. The Eclipse naming standard has the following format: 
 
         groupId.artifactId[.source]_version[.SNAPSHOT].jar
 
-* It ignores any files which are not jars.
+* When run in interactive mode (`-i`) it asks you to choose from the possible variants of name resolution. In this mode you can parse files of different naming standards.
 
-* It exits with an error if the `lib` directory contains any jars of unsupported naming format, not performing any side effects.
+* When run with `-d` modifier it deletes all successfully installed jars in the `lib` folder.
 
 * After successful installation of all jars it prints out all according dependencies for your `pom`.
 
-#Using
+
+##Using
+
 Just run it from the folder containing your lib folder. 
 
 After the script is complete copy-paste the generated dependencies xml to your `pom` under `dependencies` tag and add the following under the `repositories` tag:
@@ -22,16 +25,17 @@ After the script is complete copy-paste the generated dependencies xml to your `
       <url>file://${project.basedir}/repo</url>
     </repository>
 
-For more details and information about what to be aware of please read [this StackOverflow answer](http://stackoverflow.com/a/7623805/485115).
+For more details please read [this StackOverflow answer](http://stackoverflow.com/a/7623805/485115).
 
-#Example
+
+##Example
 If the structure of the `lib` folder is as follows:
 
     lib/
     | - org.eclipse.e4.xwt_0.9.1.SNAPSHOT.jar
     | - org.eclipse.e4.xwt.source_0.9.1.SNAPSHOT.jar
 
-It will result in the project's repository of the following structure having been created:
+Running the script in standard mode will result in the project's repository of the following structure having been created:
     
     repo/
     | - org/
