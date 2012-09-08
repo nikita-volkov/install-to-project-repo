@@ -9,7 +9,7 @@ A Python script for easily installing libraries to an in-project Maven repositor
 
 * When run in interactive mode (`-i`) it asks you to choose from the possible variants of name resolution. In this mode you can parse files of different naming standards.
 
-* When run with `-d` modifier it deletes all successfully installed jars in the `lib` folder.
+* When run with `-d` modifier it removes all successfully installed jars from the `lib` folder.
 
 * After successful installation of all jars it prints out all according dependencies for your `pom`.
 
