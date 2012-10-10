@@ -6,7 +6,7 @@
 # 
 # MIT License
 # (c) 2012, Nikita Volkov. All rights reserved.
-# http://github.com/nikita-volkov/install-to-local-repo
+# http://github.com/nikita-volkov/install-to-project-repo
 # 
 
 
