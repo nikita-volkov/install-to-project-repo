@@ -1,7 +1,6 @@
 #Install to Project Repo
 A Python script for easily installing libraries to an in-project Maven repository. It creates a repository in the root folder of the project complete with poms, checksums and metadata. It also outputs the appropriate dependencies xml to be inserted in your `pom` file.
 
-
 ##What it does
 * When run in standard mode it looks for jars in the `lib` folder having name of Eclipse standard and ignores all files that don't match it. The Eclipse naming standard has the following format: 
 
@@ -26,6 +25,8 @@ After the script is complete copy-paste the generated dependencies xml to your `
     </repository>
 
 For more details please read [this StackOverflow answer](http://stackoverflow.com/a/7623805/485115).
+
+* This version was updated to support apache libraries formats e.g. mysql-connector-java-5.1.22.jar.  The --help option describes in more detail.  (Updated on 1/27/2012 by Stephen Boesch javadba@gmail.com)
 
 
 ##Example
