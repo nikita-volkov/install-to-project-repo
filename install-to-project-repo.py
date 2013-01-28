@@ -22,11 +22,49 @@ def parse_by_eclipse_standard(path):
   file = os.path.splitext(os.path.basename(path))[0]
   match = re.match("([\w\.]+)_(\d+\.\d+\.\d+.*)", file)
   if match != None:
-    (name, version) = match.group(1, 2)
+    (libdir,name, version) = match.group(1, 2,3)
 
     name = name.split(".")
     source = name[-1] == "source"
     (group, name) = (".".join(name[:-2]), name[-2]) if source else (".".join(name[:-1]), name[-1])
+
+    snapshot = version.upper().endswith(".SNAPSHOT")
+    if snapshot:
+      version = version[:-len(".snapshot")]
+
+    return {
+      "group": group,
+      "name": name,
+      "version": version,
+      "snapshot": snapshot,
+      "source": source
+    }
+
+# Matches pattern like [[/]a/b/c/]mysql-connector-java5-5.1.22.jar
+#  and parses it to name=mysql-connector-java5  and version=5.1.22
+#  i.e. there is an optional initial directory component that is handled
+#  by a regex untion operator. The initial directory component is discarded by the regex
+# btw the regex is more complicaed than should be due to python bug
+#    http://stackoverflow.com/questions/3675144/regex-error-nothing-to-repeat
+def parse_by_apache_standard(path,group):
+  file = os.path.splitext(os.path.basename(path))[0]
+  print " matching on file %s " % file
+  #match = re.match("([\w\.\-/_])*?/?([\w\-\.]+?)-([\d\.]+).jar", file)
+  #This version does not work with python match = re.match("(?:[\w\.\-/_]*)?/([\w\-\.]+?)-([\d\.]+).jar|([\w\-\.]+?)-([\d\.]+).jar", file)
+  #match = re.match("(?:[\w\.\-/_])?/([\w\-\.]+?)-([\d\.]+)|([\w\-\.]+?)-([\d\.]+)", file)
+  match = re.match("([\w\-\.]+?)-([\d\.]+)", file)
+  if match != None:
+    print "hi there"    
+    (name, version) = match.group(1, 2)
+
+    #name = name.split(".")
+    source = False 
+    #(group, name) = (".".join(name[:-2]), name[-2]) if source else (".".join(name[:-1]), name[-1])
+    ix=name.find("-")
+    if ix < 0:
+        ix = 0
+    if not group:
+        group = name[0:ix]
 
     snapshot = version.upper().endswith(".SNAPSHOT")
     if snapshot:
@@ -203,13 +241,24 @@ parser.add_option("-i", "--interactive",
 parser.add_option("-d", "--delete", 
                   dest="delete", action="store_true", default=False, 
                   help="Delete successfully installed libs in source location")
+parser.add_option("-a", "--apache", 
+                  dest="apache", action="store_true", default=False, 
+                  help="Install files using apache jar standard eg. mysql-connector-java-5.1.22.jar. If you don't specify groupId (-g option) it will take the first string")
+parser.add_option("-g", "--groupid", 
+                  dest="groupid", action="store", default=False, 
+                  help="Specify the groupId"),
+parser.add_option("-l", "--libdir", 
+                  dest="libdir", action="store", default="lib", 
+                  help="Specify different directory containing the jar files (default is ./lib)")
 (options, args) = parser.parse_args()
 
-
+libdir=options.libdir if options.libdir else "lib"
 parsings = (
-  [(path, parse_interactively(path)) for path in jars("lib")]
+  [(path, parse_interactively(path)) for path in jars(libdir)]
   if options.interactive else
-  [(path, parse_by_eclipse_standard(path)) for path in jars("lib")]
+  [(path, parse_by_apache_standard(path,options.groupid)) for path in jars(libdir)]
+  if options.apache else
+  [(path, parse_by_eclipse_standard(path)) for path in jars(libdir)]
 )
 
 unparsable_files = [r[0] for r in parsings if r[1] == None]
