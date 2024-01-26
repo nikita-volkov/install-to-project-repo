@@ -1,18 +1,20 @@
 #!/usr/bin/python
 
 # Install to Project Repo
-# A script for installing jars to an in-project Maven repository. 
-# v0.1.1
-# 
+# A script for installing jars to an in-project Maven repository.
+#
+# v0.1.2
+#
 # MIT License
 # (c) 2012, Nikita Volkov. All rights reserved.
-# http://github.com/nikita-volkov/install-to-local-repo
-# 
+# https://github.com/nikita-volkov/install-to-project-repo
+#
 
 
 import os
 import re
 import shutil
+import argparse
 
 
 def jars(dir):
@@ -20,7 +22,7 @@ def jars(dir):
 
 def parse_by_eclipse_standard(path):
   file = os.path.splitext(os.path.basename(path))[0]
-  match = re.match("([\w\.]+)_(\d+\.\d+\.\d+.*)", file)
+  match = re.match(r"([\w\.-]+)_(\d+\.\d+\.\d+.*)", file)
   if match != None:
     (name, version) = match.group(1, 2)
 
@@ -43,7 +45,7 @@ def parse_by_eclipse_standard(path):
 def maven_dependencies(parsing_results):
   def artifact(parsing):
     return {
-      "groupId": parsing["group"], 
+      "groupId": parsing["group"],
       "artifactId": parsing["name"],
       "version": parsing["version"] + ("-SNAPSHOT" if parsing["snapshot"] else "")
     }
@@ -83,7 +85,7 @@ def install(path, parsing):
 def splits(str, splitter):
   parts = str.split(splitter)
   def split(i):
-    (l, r) = splitAt(parts, i) 
+    (l, r) = splitAt(parts, i)
     return (splitter.join(l), splitter.join(r))
 
   return map(split, range(1, len(parts)))
@@ -98,8 +100,8 @@ def splitAt(list, i):
 
 def name_to_version_alternatives(filename):
   return [
-    (n, v) 
-    for (n, v) in splits(filename, "-") + splits(filename, "_")
+    (n, v)
+    for (n, v) in list(splits(filename, "-")) + list(splits(filename, "_"))
     if v.lower() not in ["sources", "src", "snapshot"]
   ]
 
@@ -132,49 +134,49 @@ def name_parsing(name):
   else:
     return name, False
 
-def unzip(l): 
+def unzip(l):
   return tuple(zip(*l))
 
 def input_choice(labels, values):
   for (i, v) in enumerate(labels):
-    print "%d) %s" % (i+1, v)
+    print("%d) %s" % (i+1, v))
   while True:
     try:
-      i = raw_input()
+      i = input()
       i = int(i)
       return values[i-1]
     except ValueError:
-      print "Incorrect input: `%s` is not a number. Try again" % i
+      print("Incorrect input: `%s` is not a number. Try again" % i)
     except IndexError:
-      print "Incorrect input: `%s` is out of range. Try again" % i
+      print("Incorrect input: `%s` is out of range. Try again" % i)
 
 
 def parse_interactively(path):
   filename = os.path.splitext(os.path.basename(path))[0]
 
-  print "-----"
-  print "Processing `%s`" % path
+  print("-----")
+  print("Processing `%s`" % path)
 
   alternatives = name_to_version_alternatives(filename)
-  alternatives.sort(key=lambda (n, v): len(v), reverse=True)
+  alternatives.sort(key=lambda n: len(n[1]))
 
   if not alternatives:
-    print "Incorrect name format: `%s`. Skipping" % filename
+    print("Incorrect name format: `%s`. Skipping" % filename)
     return
   if len(alternatives) > 1:
-    print "Choose a correct version for `%s`:" % filename
+    print("Choose a correct version for `%s`:" % filename)
     labels = [version_parsing(v)[0] for v in unzip(alternatives)[1]]
     (name, version) = input_choice(labels, alternatives)
   else:
     (name, version) = alternatives[0]
 
-  
+
   alternatives = list(reversed(group_to_name_alternatives(name)))
   if not alternatives:
-    print "Incorrect name format: `%s`. Skipping" % filename
+    print("Incorrect name format: `%s`. Skipping" % filename)
     return
   if len(alternatives) > 1:
-    print "Choose a correct artifactId for `%s`:" % name
+    print("Choose a correct artifactId for `%s`:" % name)
     labels = [name_parsing(a)[0] for a in unzip(alternatives)[1]]
     (group, name) = input_choice(labels, alternatives)
   else:
@@ -192,38 +194,36 @@ def parse_interactively(path):
     "source": source or source1
   }
 
+parser = argparse.ArgumentParser(description='Installer for jars to an in-project Maven repository')
+parser.add_argument('-i', '--interactive',
+                    dest='interactive', action='store_true', default=False,
+                    help='Interactively resolve ambiguous names. Use this option to install libraries of different naming standards')
+parser.add_argument('-d', '--delete',
+                    dest='delete', action='store_true', default=False,
+                    help='Delete successfully installed libs in source location')
 
-
-from optparse import OptionParser
-
-parser = OptionParser()
-parser.add_option("-i", "--interactive", 
-                  dest="interactive", action="store_true", default=False,
-                  help="Interactively resolve ambiguous names. Use this option to install libraries of different naming standards")
-parser.add_option("-d", "--delete", 
-                  dest="delete", action="store_true", default=False, 
-                  help="Delete successfully installed libs in source location")
-(options, args) = parser.parse_args()
+args = parser.parse_args()
 
 
 parsings = (
   [(path, parse_interactively(path)) for path in jars("lib")]
-  if options.interactive else
+  if args.interactive else
   [(path, parse_by_eclipse_standard(path)) for path in jars("lib")]
 )
 
 unparsable_files = [r[0] for r in parsings if r[1] == None]
 if unparsable_files:
-  print "The following files could not be parsed:"
+  print("The following files could not be parsed:")
   for f in unparsable_files:
-    print "| - " + f
+    print("| - " + f)
+  print("Make sure the files are in the following format: groupId.artifactId[.source]_version[.SNAPSHOT].jar")
 
 
 parsings = [p for p in parsings if p[1] != None]
 
 for (path, parsing) in parsings:
   install(path, parsing)
-  if options.delete:
+  if args.delete:
     os.remove(path)
 
-print maven_dependencies(parsings)
+print(maven_dependencies(parsings))
